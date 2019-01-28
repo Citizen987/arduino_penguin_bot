@@ -103,6 +103,12 @@ enum IRMODE {
     TURNLIFT,
     STOP,
 } IRmode = STOP;
+enum eSoundId {
+    SOUND_KISS = 1,
+    SOUND_HELLO_DIAOLG,
+    SOUND_SONG,
+    NUM_SOUNDS,
+};
 int musicIndex = 2;
 int danceIndex = 2;
 bool danceFlag = false;
@@ -180,6 +186,9 @@ public:
         ampMode(HT6871_PIN, HIGH);
         stopPlay();
         volume = 15;
+    }
+    bool isPlaying() {
+        return getPlayStatus() != playStatus[0];
     }
 private:
     byte CMD_MusicPlay[5] = {0x7E, 0x03, 0x11, 0x12, 0xEF};
@@ -685,19 +694,29 @@ void dance4() {
     segunda_parte();
     sitdown();
 }
-void start() {
-    MP3.stopPlay();
-    MP3.playSong(1, MP3.volume);
-    startDance();
-    MP3.stopPlay();
+void kissMove() {
     servoAttach();
-}
-void startDance() {
-    servoAttach();
-    lateral_fuerte(1, t);
-    lateral_fuerte(0, t);
     goingUp(t);
     servoDetach();
+}
+void showKiss() {
+    MP3.stopPlay();
+    MP3.playSong(SOUND_KISS, MP3.volume);
+    kissMove();
+    MP3.stopPlay();
+}
+void showPlaySound(int soundId) {
+    MP3.stopPlay();
+    MP3.playSong(soundId, MP3.volume);
+    delay(5000);
+    MP3.stopPlay();
+}
+void showHelloDialogue() {
+    showPlaySound(SOUND_HELLO_DIAOLG);
+}
+void start() {
+  showHelloDialogue();
+  showKiss();
 }
 int getDistance() {
     digitalWrite(TRIG_PIN, LOW);
@@ -706,146 +725,6 @@ int getDistance() {
     delayMicroseconds(10);
     digitalWrite(TRIG_PIN, LOW);
     return (int)pulseIn(ECHO_PIN, HIGH) / 58;
-}
-void obstacleMode() {
-    // int move[] = {90, 90, 90, 90};
-    // int delaytime = 500;
-    bool turnFlag = true;
-    servoDetach();
-    distance = getDistance();
-    Serial.print("distance:");
-    Serial.print(distance);
-    if (distance >= 1 && distance <= 300) {
-        st188Val_L = analogRead(ST188_L_PIN);
-        st188Val_R = analogRead(ST188_R_PIN);
-        Serial.print("\tst188Val_L:");
-        Serial.print(st188Val_L);
-        Serial.print("\tst188Val_R:");
-        Serial.print(st188Val_R);
-        if (st188Val_L >= 1000 && st188Val_R >= 1000) {
-            Serial.println("\tGO BACKWAED 1");
-            servoAttach();
-            walk(3, t * 4, -1);
-            if (turnFlag) {
-                turn(3, t * 4, 1);
-            } else {
-                turn(3, t * 4, -1);
-            }
-            // moveNServos(delaytime, move);
-            // delay(delaytime);
-            servoDetach();
-        } else if (st188Val_L >= 1000 && st188Val_R < 1000) {
-            Serial.println("\tTURN RIGHT 2");
-            turnFlag = true;
-            servoAttach();
-            turn(3, t * 4, 1);
-            // moveNServos(delaytime, move);
-            // delay(delaytime);
-            servoDetach();
-        } else if (st188Val_L < 1000 && st188Val_R >= 1000) {
-            Serial.println("\tTURN LEFT 3");
-            turnFlag = false;
-            servoAttach();
-            turn(3, t * 4, -1);
-            // moveNServos(delaytime, move);
-            // delay(delaytime);
-            servoDetach();
-        } else if (st188Val_L < 1000 && st188Val_R < 1000) {
-            if (distance < 5) {
-                Serial.println("\tGO BACKWAED 4");
-                servoAttach();
-                walk(3, t * 4, -1);
-                if (turnFlag) {
-                    turn(3, t * 4, 1);
-                } else {
-                    turn(3, t * 4, -1);
-                }
-                // moveNServos(delaytime, move);
-                // delay(delaytime);
-                servoDetach();
-            } else if (distance >= 5 && distance <= 20) {
-                Serial.println("\tTURN RIGHT 5");
-                servoAttach();
-                if (turnFlag) {
-                    turn(1, t * 4, 1);
-                } else {
-                    turn(1, t * 4, -1);
-                }
-                // moveNServos(delaytime, move);
-                // delay(delaytime);
-                servoDetach();
-            } else {
-                Serial.println("\tGO FORWARD 6");
-                servoAttach();
-                walk(1, t * 4, 1);
-                // moveNServos(delaytime, move);
-                // delay(delaytime);
-                servoDetach();
-            }
-        }
-    } else {
-        Serial.println("\tSTOP 7");
-        servoAttach();
-        home();
-        servoDetach();
-    }
-}
-void followMode() {
-    int move[] = {90, 90, 90, 90};
-    int delaytime = 500;
-    servoDetach();
-    distance = getDistance();
-    Serial.print("distance:");
-    Serial.print(distance);
-    if (distance >= 1 && distance <= 300) {
-        st188Val_L = analogRead(ST188_L_PIN);
-        st188Val_R = analogRead(ST188_R_PIN);
-        Serial.print("\tst188Val_L:");
-        Serial.print(st188Val_L);
-        Serial.print("\tst188Val_R:");
-        Serial.print(st188Val_R);
-        if (st188Val_L >= 1000 && st188Val_R >= 1000) {
-            Serial.println("\tGO FORWARD 1");
-            servoAttach();
-            walk(1, t * 4, 1);
-            // moveNServos(delaytime, move);
-            // delay(delaytime);
-            servoDetach();
-        } else if (st188Val_L >= 1000 && st188Val_R < 1000) {
-            Serial.println("\tTURN LEFT 2");
-            servoAttach();
-            turn(1, t * 4, -1);
-            // moveNServos(delaytime, move);
-            // delay(delaytime);
-            servoDetach();
-        } else if (st188Val_L < 1000 && st188Val_R >= 1000) {
-            Serial.println("\tTURN RIGHT 3");
-            servoAttach();
-            turn(1, t * 4, 1);
-            // moveNServos(delaytime, move);
-            // delay(delaytime);
-            servoDetach();
-        } else if (st188Val_L < 1000 && st188Val_R < 1000) {
-            if (distance > 20) {
-                Serial.println("\tSTOP 4");
-                servoAttach();
-                home();
-                servoDetach();
-            } else {
-                Serial.println("\tGO FORWARD 5");
-                servoAttach();
-                walk(1, t * 4, 1);
-                // moveNServos(delaytime, move);
-                // delay(delaytime);
-                servoDetach();
-            }
-        }
-    } else {
-        Serial.println("\tSTOP 6");
-        servoAttach();
-        home();
-        servoDetach();
-    }
 }
 void st188Adjust(int dis) {
     if (millis() - infraredMeasureTime > 1000 && dis > 20 && dis < 200 && analogRead(ST188_L_PIN) < 300 && analogRead(ST188_R_PIN) < 300) {
@@ -872,9 +751,10 @@ void voltageMeasure() {
         // Serial.print("volMeasure = ");
         // Serial.print(volMeasure);
         // Serial.print("\t");
-        Serial.print("VCC = ");
-        Serial.print(VCC);
-        Serial.println(" V");
+        
+        // Serial.print("VCC = ");
+        // Serial.print(VCC);
+        // Serial.println(" V");
         //double VCC = analogRead(VOLTAGE_MEASURE_PIN) * 1.1 * 6 / 1024;
         if (VCC < 4.8) {
             LED_flag = false;
@@ -898,7 +778,7 @@ void voltageMeasure() {
 boolean getIRValue() {
     if (irrecv.decode(&results)) {
         irValue = results.value;
-        Serial.println(irValue);
+        // Serial.println(irValue);
         irrecv.resume();
         return true;
     }
@@ -937,218 +817,36 @@ void setup() {
     delay(2000);
     start();
 }
+#include "SamsungSoundIrRemoteControl.h"
+
 void loop() {
     voltageMeasure();
     if (getIRValue()) {
         Serial.print("irValue = ");
         Serial.println(irValue);
+        if (irValue == SamsungSoundIrRemoteControl::VALUE_BUTTONS[SamsungSoundIrRemoteControl::eButtons::BUTTON_POWER]) {
+            showKiss();
+        }
         switch (irValue) {
         case BTN_UP:
-            MP3.stopPlay();
-            mode = IRREMOTE;
-            IRmode = FORWARD;
-            break;
         case BTN_DOWN:
-            MP3.stopPlay();
-            mode = IRREMOTE;
-            IRmode = BACKWAED;
-            break;
         case BTN_LEFT:
-            MP3.stopPlay();
-            mode = IRREMOTE;
-            IRmode = TURNLIFT;
-            break;
         case BTN_RIGHT:
-            MP3.stopPlay();
-            mode = IRREMOTE;
-            IRmode = TURNRIGHT;
-            break;
         case BTN_MODE:
-            servoDetach();
-            Serial.println("BTN_MODE");
-            if (mode == FOLLOW) {
-                delay(10);
-                MP3.stopPlay();
-                delay(10);
-                MP3.playSong(7, MP3.volume);
-                mode = OBSTACLE;
-                Serial.println("OBSTACLE");
-            } else {
-                delay(10);
-                MP3.stopPlay();
-                delay(10);
-                MP3.playSong(6, MP3.volume);
-                mode = FOLLOW;
-                Serial.println("FOLLOW");
-            }
-            break;
         case BTN_IDLE:
-            MP3.stopPlay();
-            mode = IDLE;
-            servoAttach();
-            home();
-            servoDetach();
+            showKiss();
             break;
-        case BTN_MUSIC:
-            servoDetach();
-            MP3.stopPlay();
-            mode = MUSIC;
-            MP3.playSong(musicIndex, MP3.volume);
-            preMp3Millis = millis();
+        case BTN_MUSIC:  
+            showPlaySound(SOUND_SONG);
             break;
         case BTN_DANCE:
-            servoDetach();
-            MP3.stopPlay();
-            mode = DANCE;
-            if (danceNum == 0) {
-                delay(10);
-                MP3.playSong(danceIndex, MP3.volume);
-            }
-            danceNum++;
-            if (danceFlag == true || danceNum >= 2) {
-                delay(10);
-                MP3.stopPlay();
-                delay(10);
-                MP3.playSong(danceIndex, MP3.volume);
-                servoAttach();
-                switch (danceIndex) {
-                case 2:
-                    dance2();
-                    break;
-                case 3:
-                    dance3();
-                    break;
-                case 4:
-                    dance4();
-                    break;
-                default:
-                    break;
-                }
-                servoDetach();
-                danceFlag = false;
-                MP3.stopPlay();
-                danceNum = 0;
-            }
-            break;
         case BTN_SUB:
-            servoDetach();
-            MP3.stopPlay();
-            if (mode == MUSIC) {
-                musicIndex++;
-                if (musicIndex > 4) {
-                    musicIndex = 2;
-                }
-                MP3.playSong(musicIndex, MP3.volume);
-            }
-            if (mode == DANCE) {
-                danceFlag = true;
-                danceIndex++;
-                if (danceIndex > 4) {
-                    danceIndex = 2;
-                }
-                MP3.playSong(danceIndex, MP3.volume);
-            }
-            if (mode == VOLUME) {
-                MP3.volumeDown();
-                MP3.volume -= 1;
-                if (MP3.volume <= 0) {
-                    MP3.volume = 0;
-                }
-                MP3.playSong(5, MP3.volume);
-            }
-            break;
         case BTN_ADD:
-            servoDetach();
-            MP3.stopPlay();
-            if (mode == MUSIC) {
-                musicIndex--;
-                if (musicIndex < 2) {
-                    musicIndex = 4;
-                }
-                MP3.playSong(musicIndex, MP3.volume);
-            }
-            if (mode == DANCE) {
-                danceFlag = true;
-                danceIndex--;
-                if (danceIndex < 2) {
-                    danceIndex = 4;
-                }
-                MP3.playSong(danceIndex, MP3.volume);
-            }
-            if (mode == VOLUME) {
-                MP3.volumePlus();
-                MP3.volume += 1;
-                if (MP3.volume >= 30) {
-                    MP3.volume = 30;
-                }
-                MP3.playSong(5, MP3.volume);
-            }
-            break;
         case BTN_VOL:
-            servoDetach();
-            mode = VOLUME;
-            delay(10);
-            MP3.stopPlay();
-            delay(10);
-            MP3.playSong(5, MP3.volume);
+            showHelloDialogue();
             break;
         default:
             break;
         }
-    }
-    switch (mode) {
-    case IDLE:
-        break;
-    case IRREMOTE:
-        switch (IRmode) {
-        case FORWARD:
-            servoAttach();
-            walk(1, t * 4, 1);
-            servoDetach();
-            break;
-        case BACKWAED:
-            servoAttach();
-            walk(1, t * 4, -1);
-            servoDetach();
-            break;
-        case TURNRIGHT:
-            servoAttach();
-            turn(1, t * 4, 1);
-            servoDetach();
-            break;
-        case TURNLIFT:
-            servoAttach();
-            turn(1, t * 4, -1);
-            servoDetach();
-            break;
-        default:
-            break;
-        }
-        break;
-    case OBSTACLE:
-        servoAttach();
-        obstacleMode();
-        servoDetach();
-        break;
-    case FOLLOW:
-        servoAttach();
-        followMode();
-        servoDetach();
-        break;
-    case MUSIC:
-        if (millis() - preMp3Millis > 1000) {
-            preMp3Millis = millis();
-            if (MP3.getPlayStatus() == MP3.playStatus[0]) {
-                musicIndex++;
-                if (musicIndex > 4) {
-                    musicIndex = 2;
-                }
-                MP3.playSong(musicIndex, MP3.volume);
-            }
-        }
-        break;
-    case DANCE:
-        break;
-    default: break;
     }
 }
